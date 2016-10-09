@@ -18,8 +18,7 @@ Your job is to create a "rectangular" table useful for modeling from flight data
 Using the `readr` package read the `flights` data.
 
 ```{r}
-
-
+df <- read.csv("~/csx460/CSX460/02-fundamentals/data/flights.csv")
 ```
 
 ## Numeric Variables  
@@ -27,6 +26,8 @@ Using the `readr` package read the `flights` data.
 Plot a histogram of arrival delays and departure delays 
 
 ```{r}
+hist(df$dep_delay, main = "Departure delay", xlab = "Time")
+hist(df$arr_delay, main = "Arrival delay", xlab = "Time")
 
 ```
 
@@ -36,6 +37,13 @@ Plot a scatterplot of date vs arrival delay
 
 ```{r}
 
+plot(df$time_hour, df$arr_delay, main = "Date vs Arrival Delay", xlab = "Date", ylab = "Arrival Delay")
+
+Or
+
+DateMDY <- as.Date(paste(df$year, df$month, df$day), format = "%Y%m%d")
+df$Date <- paste(DateMDY)
+plot(df$Date, df$arr_delay, main = "Date vs Arrival Delay", xlab = "Date", ylab = "Arrival Delay")
 ```
 
 
@@ -46,6 +54,7 @@ Create a `table` of occurences of origin airports and carrier.
 
 ```{r}
 
+CrossTable(df$origin, df$carrier)
 
 ```
 
