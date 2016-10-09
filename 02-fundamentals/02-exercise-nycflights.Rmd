@@ -18,7 +18,7 @@ Your job is to create a "rectangular" table useful for modeling from flight data
 Using the `readr` package read the `flights` data.
 
 ```{r}
-df <- read.csv("~/csx460/CSX460/02-fundamentals/data/flights.csv")
+df = read_csv("~/csx460/CSX460/02-fundamentals/data/flights.csv")
 ```
 
 ## Numeric Variables  
