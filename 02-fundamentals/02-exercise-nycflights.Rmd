@@ -64,7 +64,18 @@ CrossTable(df$origin, df$carrier)
 **Read** in the other data sets. Use methods to join the data together to create a single table containing one record per row.  (HINT: see `?data.table` or `?dplyr::join`)
 
 ```{r}
+df_weather <- read_csv("~/csx460/CSX460/02-fundamentals/data/weather.csv")
+df_planes <- read_csv("~/csx460/CSX460/02-fundamentals/data/planes.csv")
+df_planes <- read_csv("~/csx460/CSX460/02-fundamentals/data/planes.csv")
 
+
+df_join_df_flight_name <- df %>% left_join(df_planes, by = "tailnum")
+
+df_join_df_flight_name_join_weather2 = df_join_df_flight_name %>% left_join(df_weather, c("month", "day", "hour", "origin"), c("year.x" = "year"))
+
+df_join_df_flight_name_join_weather2_join_origin_airports = df_join_df_flight_name_join_weather2 %>% left_join(df_airports, c("origin" = "faa"))
+
+df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport = df_join_df_flight_name_join_weather2_join_origin_airports %>% left_join(df_airports, c("dest" = "faa"))
 ```
 
 
