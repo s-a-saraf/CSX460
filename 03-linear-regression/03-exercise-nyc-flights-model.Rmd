@@ -7,6 +7,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+install.packages("ggplot2")
+install.packages("psych")
+library(ggplot2)
+library(psych)
 ```
 
 # NYCFlights Model
@@ -18,7 +22,7 @@ for building a model. Describe/Explain each of the steps and show all work in co
 ## Step 1: Collect Data 
 
 ```{r "Step 1: Collect Data" }
-
+str(df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport)
 ```
 
 ## Step 2: Explore and Prep The Data
@@ -28,7 +32,18 @@ One of the things not done in the MLwR text is a pairwise comparison between the
 
 
 ```{r "Step 2: Explore and Prep The Data" }
+summary(df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport$arr_delay)
 
+hist(df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport$arr_delay)
+
+ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=arr_delay)) + geom_histogram()
+
+ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=log(10, df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport$arr_delay))) + geom_histogram()
+
+
+ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=arr_delay)) + geom_histogram() + scale_x_sqrt()
+
+ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=arr_delay)) + geom_histogram() + scale_x_log10("Arrival Delay") + scale_y_continuous("Count")
 ```
 
 ## Step 3:  Train The Model
