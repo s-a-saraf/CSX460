@@ -9,8 +9,75 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 install.packages("ggplot2")
 install.packages("psych")
+install.packages("lubridate")
+```
+
+```{r load_libs}
 library(ggplot2)
 library(psych)
+library(readr)
+library(magrittr)
+library(lubridate)
+library(stringr)
+library(dplyr)
+library(data.table)
+```
+
+#Exercise 1
+```{r "Solution to exercise 1"}
+setwd("~/csx460/CSX460/02-fundamentals")
+flights  <- "data/flights.csv" %>% read_csv 
+planes   <- read_csv("data/planes.csv")
+airports <- read_csv("data/airports.csv") 
+weather  <- read_csv("data/weather.csv")
+
+str_pad4 <- . %>% str_pad(4,'left',0)
+str_pad2 <- . %>% str_pad(2,'left',0)
+
+ymd_hm <- function(year, month, day, hour, minute ) { 
+  dates <- paste0(
+    year %>% str_pad4, 
+    month %>% str_pad2,
+    day %>% str_pad2,
+    " ",
+    hour %>% str_pad2,
+    ":",
+    minute %>% str_pad2
+  ) 
+
+  dates %>% lubridate:::ymd_hm(.)
+
+}
+
+ymd_hm1 <- function(year, month, day, hour, minute ) { 
+  dates <- paste0(
+    str_pad(4, 'left', year),
+    str_pad(2,'left', month),
+    str_pad(2,'left', day),
+    " ",
+    str_pad(2,'left', hour),
+    ":",
+    str_pad(2,'left',minute)
+  ) 
+
+  dates %>% lubridate:::ymd_hm(.)
+
+}
+
+flights <- flights %>% mutate( dt = ymd_hm(year,month,day,hour,minute) )
+
+flights$carrier %>% table( useNA="always") %>% sort 
+flights$origin %>% table( useNA="always") %>% sort 
+
+table( flights$carrier, flights$origin)
+
+YX <- 
+  flights %>% 
+  left_join(weather, by=c("origin","year","month","day","hour") ) %>%
+  left_join(planes, by='tailnum', suffixes=c('','.pl') ) %>% 
+  left_join(airports, by=c('origin'='faa') ) %>% 
+  left_join(airports, by=c('dest'='faa') )    
+
 ```
 
 # NYCFlights Model
@@ -22,33 +89,45 @@ for building a model. Describe/Explain each of the steps and show all work in co
 ## Step 1: Collect Data 
 
 ```{r "Step 1: Collect Data" }
-str(df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport)
+str(YX)
 ```
 
 ## Step 2: Explore and Prep The Data
 
 
-One of the things not done in the MLwR text is a pairwise comparison between the response and each of the predictors. Make sure to do this; this is often very illustrative of the relationship between that predictor and the response. This can be done with `pairs` or `psych::panel.pairs`
+#One of the things not done in the MLwR text is a pairwise comparison between the response and each of the predictors. Make sure to do this; this is often very illustrative of the relationship between that predictor and the response. This can be done with `pairs` or `psych::panel.pairs`
 
 
 ```{r "Step 2: Explore and Prep The Data" }
-summary(df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport$arr_delay)
+summary(YX$arr_delay)
 
-hist(df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport$arr_delay)
+hist(YX$arr_delay)
 
-ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=arr_delay)) + geom_histogram()
+ggplot(data=YX, aes(x=arr_delay)) + geom_histogram()
 
-ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=log(10, df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport$arr_delay))) + geom_histogram()
+ggplot(data=YX, aes(x=log(10, YX$arr_delay))) + geom_histogram()
 
 
-ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=arr_delay)) + geom_histogram() + scale_x_sqrt()
+ggplot(data=YX, aes(x=arr_delay)) + geom_histogram() + scale_x_sqrt()
 
-ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_airport, aes(x=arr_delay)) + geom_histogram() + scale_x_log10("Arrival Delay") + scale_y_continuous("Count")
+ggplot(data=YX, aes(x=arr_delay)) + geom_histogram() + scale_x_log10("Arrival Delay") + scale_y_continuous("Count")
+
+cor(YX[c("arr_delay", "dep_delay", "dep_time", "sched_arr_time", "distance", "air_time", "temp", "wind_speed", "wind_gust", "wind_dir", "precip", "visib")], use="complete")
+#pairs(YX[c("arr_delay", "dep_delay", "dep_time", "sched_arr_time", "distance", "air_time", "temp", "wind_speed", "wind_gust", "wind_dir", "precip", "visib")])
 ```
 
 ## Step 3:  Train The Model
 
 ```{r "Step 3: Train The Model" }
+smp <- sample(1:nrow(YX), size = round(0.7*nrow(YX)), replace=FALSE)
+train <- YX[smp,]
+test <- YX[-smp,]
+
+# Throws error ->
+m1 <- lm(arr_delay ~ ., data = train)
+
+m1 <- lm(arr_delay ~ dt + dep_time + sched_dep_time + sched_arr_time + arr_time + carrier + flight + origin + dest + air_time + distance + dewp + temp + wind_dir + wind_speed + wind_gust + visib + pressure + precip + engines + seats + speed + type + manufacturer + model + engine, data = train)
+
 
 ```
 
@@ -57,11 +136,20 @@ ggplot(data=df_join_df_flight_name_join_weather2_join_origin_airports_by_dest_ai
 Evaluating performance is a crutial step, that has yet to be treated well by the MLwR. Think about some of the tools that you have for evaluating performance.  Choose one and articulate why you have chosen it.
 
 ```{r "Step 4: Evaluate Performance" }
-
+mpredict <- predict(m1, test)
 ```
 
 
 ## Step 5: Improve Performance 
+
+#Not needed features -
+# tailnum 
+# names <airport names>
+# Manufacturer since we already have model
+
+# Combination features -
+# dep_time * sched_dep_time
+# 
 
 Show some steps for improving model performance.
 
