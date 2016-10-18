@@ -1,7 +1,7 @@
 ---
 title: "NYCFlights: Arrival Delay Regression Model"
-author: "[Your Name]"
-date: "[Today's Date]"
+author: "Snehal A Saraf"
+date: "17 October 2016"
 output: html_document
 ---
 
@@ -112,16 +112,17 @@ ggplot(data=YX, aes(x=arr_delay)) + geom_histogram() + scale_x_sqrt()
 
 ggplot(data=YX, aes(x=arr_delay)) + geom_histogram() + scale_x_log10("Arrival Delay") + scale_y_continuous("Count")
 
-cor(YX[c("arr_delay", "dep_delay", "dep_time", "sched_arr_time", "distance", "air_time", "temp", "wind_speed", "wind_gust", "wind_dir", "precip", "visib")], use="complete")
+smp <- sample(1:nrow(YX), size = round(0.7*nrow(YX)), replace=FALSE)
+train <- YX[smp,]
+test <- YX[-smp,]
+cor(train[c("arr_delay", "dep_delay", "dep_time", "sched_arr_time", "distance", "air_time", "temp", "wind_speed", "wind_gust", "wind_dir", "precip", "visib")], use="complete")
 #pairs(YX[c("arr_delay", "dep_delay", "dep_time", "sched_arr_time", "distance", "air_time", "temp", "wind_speed", "wind_gust", "wind_dir", "precip", "visib")])
 ```
 
 ## Step 3:  Train The Model
 
 ```{r "Step 3: Train The Model" }
-smp <- sample(1:nrow(YX), size = round(0.7*nrow(YX)), replace=FALSE)
-train <- YX[smp,]
-test <- YX[-smp,]
+
 
 # Throws error ->
 m1 <- lm(arr_delay ~ ., data = train)
@@ -137,14 +138,16 @@ Evaluating performance is a crutial step, that has yet to be treated well by the
 
 ```{r "Step 4: Evaluate Performance" }
 mpredict <- predict(m1, test)
+
+#Plot graph of the errors.
 ```
 
 
 ## Step 5: Improve Performance 
 
-#Not needed features -
+#features Not needed  -
 # tailnum 
-# names <airport names>
+# names <airport names> since we have the codes.
 # Manufacturer since we already have model
 
 # Combination features -
