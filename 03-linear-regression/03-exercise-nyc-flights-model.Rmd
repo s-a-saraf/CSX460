@@ -7,9 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-install.packages("ggplot2")
-install.packages("psych")
-install.packages("lubridate")
+
 ```
 
 ```{r load_libs}
