@@ -1,12 +1,21 @@
 ---
 title: "NYCFlights: Arrival Delay Logictic Model"
-author: "[Your Name]"
-date: "[Today's Date]"
+author: "Snehal A. Saraf"
+date: "23 Oct 2016"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(psych)
+library(readr)
+library(magrittr)
+library(lubridate)
+library(stringr)
+library(dplyr)
+library(data.table)
 ```
 
 
@@ -37,6 +46,8 @@ KNIT YOUR DOCUMENT AS *HTML* AND SUBMIT IT AND THE `Rmd` file.
 ## Step 1: Collect Data 
 
 ```{r "Step 1: Collect Data" }
+yxlo <- YX
+yxlo$delayed <- ifelse(yxlo$arr_delay >= 15, 1, 0)
 
 ```
 
@@ -47,13 +58,65 @@ One of the things not done in the MLwR text is a pairwise comparison between the
 
 
 ```{r "Step 2: Explore and Prep The Data" }
+# Naive model
 
+ggplot(data = yxlo, aes(delayed)) + geom_histogram()
+
+# Get the feature with a single value for all egs. < o/p year.x tz.x >
+yxlo %>% sapply(. %>% unique %>% length)
+summary(yxlo$year.x)
+summary(yxlo$tz.x)
+summary(yxlo$dst.x)
+
+# Remove single valued features
+yxlo <- yxlo[, !(names(yxlo) %in% c("year.x", "tz.x", "dst.x"))]
+
+# Get the no of NA's in each feature
+yxlo %>% sapply(. %>% is.na %>% sum)
+library("Amelia")
+missmap(yxlo)
+
+# speed has lots of NA and can be deleted. Same with manufacturer, manuf, model, type, seats.
+yxlo <- yxlo[, !(names(yxlo) %in% c("speed"))]
+
+# Replace the NA's in each column.
+for(i in 1:ncol(yxlo)){
+#  if (yxlo(, i) %>% sapply(., is.numeric))
+  yxlo[is.na(yxlo[,i]), i] <- mean(yxlo[,i], na.rm = TRUE)
+}
+
+# Divide the data into training, cv and test sets.
+
+# Use caret lib's createFolds() to create 10 folds. Ideally, we would want to run the model on 
+# each of the fold as test data. Each fold holds random set of rows.
+library("caret")
+folds <- createFolds(yxlo$delayed, k = 10)
+str(folds)
 ```
 
 ## Step 3:  Train The Model
 
 ```{r "Step 3: Train The Model" }
 
+
+
+# Ideally we have to loop using each fold [1 ... 10] as a test set and remaining folds as training set.
+# Fold02, 03, 04 ... 10 in a loop
+
+# Divide the test set into two parts CV & test randomly.
+rand <- order(runif(nrow(folds$Fold01)))
+
+test_set <- yxlo[rand[1:(nrow(folds$Fold01)/2)]]
+cv_set <- yxlo[rand[(nrow(folds$Fold01)/2)+1 : (nrow(folds$Fold01))]]
+
+train_set <- yxlo[-folds$Fold01] 
+
+train_set <- yxlo
+
+train_set %>% sapply(. %>% unique %>% length)
+#sampled_set <- sample_n(train_set, 15000, replace = FALSE)
+logisticmodel <- glm(delayed ~ ., data = train_set, family = "binomial")
+head(logisticmodel)
 ```
 
 ## Step 4: Evaluate Performance
@@ -61,6 +124,22 @@ One of the things not done in the MLwR text is a pairwise comparison between the
 Think about some of the tools that you have for evaluating performance.  Choose one and articulate why you have chosen it.
 
 ```{r "Step 4: Evaluate Performance" }
+
+# Run the model on the cv_set
+cv_set <- sample_n(yxlo, 25, replace = FALSE)
+predictedRes <- predict(logisticmodel, cv_set)
+
+# Create a new table with "Actual OP"  "Predicted OP" for the cv_set
+predictTable$actual_type <- cv_set$delayed
+predictTable$predict_type <- predictedRes
+
+# Create the confusion Matrix
+predictTable <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
+
+#Get the sensitivity < True Positive Ratio >
+sensi <- 
+
+#Get the specificity < True Negative Ratio >
 
 ```
 
