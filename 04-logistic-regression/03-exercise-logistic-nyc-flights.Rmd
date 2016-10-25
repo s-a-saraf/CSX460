@@ -15,7 +15,6 @@ library(magrittr)
 library(lubridate)
 library(stringr)
 library(dplyr)
-library(data.table)
 ```
 
 
@@ -47,7 +46,6 @@ KNIT YOUR DOCUMENT AS *HTML* AND SUBMIT IT AND THE `Rmd` file.
 
 ```{r "Step 1: Collect Data" }
 yxlo <- YX
-yxlo$delayed <- ifelse(yxlo$arr_delay >= 15, 1, 0)
 
 ```
 
@@ -60,16 +58,29 @@ One of the things not done in the MLwR text is a pairwise comparison between the
 ```{r "Step 2: Explore and Prep The Data" }
 # Naive model
 
+# Study the table given and cherry pick the important features
+
+y <- "arr_delay"
+xs <- c(
+    'month','dep_delay','carrier','air_time','distance'
+   ,'year.y','type','engine'
+   ,'wind_dir','wind_speed','wind_gust','precip','pressure','visib'
+   ,'lat.x','lon.x','lat.y','lon.y'
+)
+
+yxlo <- YX[, c(y, xs)]
+yxlo$delayed <- ifelse(yxlo$arr_delay >= 15, 1, 0)
+ 
 ggplot(data = yxlo, aes(delayed)) + geom_histogram()
 
 # Get the feature with a single value for all egs. < o/p year.x tz.x >
-yxlo %>% sapply(. %>% unique %>% length)
-summary(yxlo$year.x)
-summary(yxlo$tz.x)
-summary(yxlo$dst.x)
+# yxlo %>% sapply(. %>% unique %>% length)
+# summary(yxlo$year.x)
+# summary(yxlo$tz.x)
+# summary(yxlo$dst.x)
 
 # Remove single valued features
-yxlo <- yxlo[, !(names(yxlo) %in% c("year.x", "tz.x", "dst.x"))]
+# yxlo <- yxlo[, !(names(yxlo) %in% c("year.x", "tz.x", "dst.x"))]
 
 # Get the no of NA's in each feature
 yxlo %>% sapply(. %>% is.na %>% sum)
@@ -127,19 +138,21 @@ Think about some of the tools that you have for evaluating performance.  Choose 
 
 # Run the model on the cv_set
 cv_set <- sample_n(yxlo, 25, replace = FALSE)
-predictedRes <- predict(logisticmodel, cv_set)
+predictedRes <- predict(logisticmodel, cv_set, type = "response")
 
 # Create a new table with "Actual OP"  "Predicted OP" for the cv_set
-predictTable$actual_type <- cv_set$delayed
-predictTable$predict_type <- predictedRes
+predictTable <- data.frame(predict_type = predictedRes, actual_type = cv_set$delayed)
 
 # Create the confusion Matrix
-predictTable <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
+library(caret)
+confusionMat <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
 
-#Get the sensitivity < True Positive Ratio >
-sensi <- 
+# Get the sensitivity < True Positive Ratio >
+sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
 
-#Get the specificity < True Negative Ratio >
+# Get the specificity < True Negative Ratio >
+speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
+
 
 ```
 
@@ -162,3 +175,64 @@ Is this a good model?  (Write your answer here.)
 
 Your model should be good at explaining tardiness. Now, assume that your job is to predict arrival delays a month in advance. You can no longer use all the features in your model. Retrain your model using only features that will be *known* only a month in advance of the departure time.  Show all steps as above.
 
+```{r "Step B.1 - B.2 Collect / Prep data - dep_delay etc not known"}
+y <- "arr_delay"
+xs <- c(
+    'month','carrier','air_time','distance'
+   ,'year.y','type','engine'
+   ,'wind_dir','wind_speed','wind_gust','precip','pressure','visib'
+   ,'lat.x','lon.x','lat.y','lon.y'
+)
+
+
+yxlo <- YX[, c(y, xs)]
+yxlo$delayed <- ifelse(yxlo$arr_delay >= 15, 1, 0)
+ 
+ggplot(data = yxlo, aes(delayed)) + geom_histogram()
+
+yxlo %>% sapply(. %>% is.na %>% sum)
+library("Amelia")
+missmap(yxlo)
+
+# speed has lots of NA and can be deleted. Same with manufacturer, manuf, model, type, seats.
+yxlo <- yxlo[, !(names(yxlo) %in% c("speed"))]
+
+# Replace the NA's in each column.
+for(i in 1:ncol(yxlo)){
+#  if (yxlo(, i) %>% sapply(., is.numeric))
+  yxlo[is.na(yxlo[,i]), i] <- mean(yxlo[,i], na.rm = TRUE)
+}
+
+```
+
+```{r "Step B.3: Train The Model" }
+train_set <- yxlo
+
+train_set %>% sapply(. %>% unique %>% length)
+#sampled_set <- sample_n(train_set, 15000, replace = FALSE)
+logisticmodel <- glm(delayed ~ ., data = train_set, family = "binomial")
+head(logisticmodel)
+
+```
+
+
+```{r "Step B.4: Evaluate Performance" }
+
+# Run the model on the cv_set
+cv_set <- sample_n(yxlo, 25, replace = FALSE)
+predictedRes <- predict(logisticmodel, cv_set, type = "response")
+
+# Create a new table with "Actual OP"  "Predicted OP" for the cv_set
+predictTable <- data.frame(predict_type = predictedRes, actual_type = cv_set$delayed)
+
+# Create the confusion Matrix
+library(caret)
+confusionMat <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
+
+# Get the sensitivity < True Positive Ratio >
+sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
+
+# Get the specificity < True Negative Ratio >
+speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
+
+```
