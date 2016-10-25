@@ -20,14 +20,44 @@ library(dplyr)
 
 ## Logsitic and Inverse Logistic Transformation 
 
-- Write an R function for the logistic function. The function should accept a `numeric` vector with values `[-Inf,Inf]` and produce a numeric vector in the the range `[0,1]`.
+# Write an R function for the logistic function. The function should accept a `numeric` vector with values `[-Inf,Inf]` and produce a numeric vector in the the range `[0,1]`.
 
-- Plot the logistic function from  `[-10,10]`
+``` {r "Logistic function"}
+    logfunc <- function(x) {
+        y1 <- -1 * x
+        y2 <- exp(y1) 
+        y3 <- 1 + y2
+        y4 <- 1/y3
+        return(y4)
+    }
 
-- Write a R function for the inverse logistic function. The function should accept a `numeric` vector with values `[0,1]` and prodcuce a numeric vector in the range `[-Inf,Inf]`
+```
 
-- Plot the Inverse Logistic function from `[0,1]`
+# Plot the logistic function from  `[-10,10]`
+``` {r "Plot logistic function from -10 to 10"}
+    x <- c(-10:10)
+    res <- logfunc(x)
+    ggplot(data = data.frame(x, res), aes(x, res)) + geom_line()
+```
 
+# Write a R function for the inverse logistic function. The function should accept a `numeric` vector with values `[0,1]` and prodcuce a numeric vector in the range `[-Inf,Inf]`
+
+``` {r "Inverse logistic function"}
+   revlogfunc <- function(y) {
+     x1 <- (1/y)
+     x2 <- x1-1
+     x3 <- log(x2)
+     x4 <- -1 * x3
+     return(x4)
+   }
+```
+
+# Plot the Inverse Logistic function from `[0,1]`
+``` {r "Plot Inverse Logistic function from 0-1"}
+    # Take res in this case
+    res2 <- revlogfunc(res)
+    ggplot(data = data.frame(res, res2), aes(res, res2)) + geom_line()
+```
 
 **Hint:** For plotting curves see `?graphics::curve` or `?ggplot2::stat_function`
 
@@ -45,6 +75,7 @@ KNIT YOUR DOCUMENT AS *HTML* AND SUBMIT IT AND THE `Rmd` file.
 ## Step 1: Collect Data 
 
 ```{r "Step 1: Collect Data" }
+setwd("~/csx460/CSX460/02-fundamentals/data/")
 yxlo <- YX
 
 ```
