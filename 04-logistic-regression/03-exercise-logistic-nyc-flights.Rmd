@@ -75,6 +75,7 @@ KNIT YOUR DOCUMENT AS *HTML* AND SUBMIT IT AND THE `Rmd` file.
 ## Step 1: Collect Data 
 
 ```{r "Step 1: Collect Data" }
+load("~/csx460/CSX460/02-fundamentals/data/ex2.RData")
 setwd("~/csx460/CSX460/02-fundamentals/data/")
 yxlo <- YX
 
@@ -102,6 +103,8 @@ xs <- c(
 yxlo <- YX[, c(y, xs)]
 yxlo$delayed <- ifelse(yxlo$arr_delay >= 15, 1, 0)
  
+# Remove the param "arr_delay" since it is replaced with "delayed"
+yxlo <- yxlo[, !(names(yxlo) %in% c("arr_delay"))]
 ggplot(data = yxlo, aes(delayed)) + geom_histogram()
 
 # Get the feature with a single value for all egs. < o/p year.x tz.x >
@@ -132,8 +135,8 @@ for(i in 1:ncol(yxlo)){
 # Use caret lib's createFolds() to create 10 folds. Ideally, we would want to run the model on 
 # each of the fold as test data. Each fold holds random set of rows.
 library("caret")
-folds <- createFolds(yxlo$delayed, k = 10)
-str(folds)
+#folds <- createFolds(yxlo$delayed, k = 10)
+#str(folds)
 ```
 
 ## Step 3:  Train The Model
@@ -146,12 +149,12 @@ str(folds)
 # Fold02, 03, 04 ... 10 in a loop
 
 # Divide the test set into two parts CV & test randomly.
-rand <- order(runif(nrow(folds$Fold01)))
+#rand <- order(runif(nrow(folds$Fold01)))
 
-test_set <- yxlo[rand[1:(nrow(folds$Fold01)/2)]]
-cv_set <- yxlo[rand[(nrow(folds$Fold01)/2)+1 : (nrow(folds$Fold01))]]
+#test_set <- yxlo[rand[1:(nrow(folds$Fold01)/2)]]
+#cv_set <- yxlo[rand[(nrow(folds$Fold01)/2)+1 : (nrow(folds$Fold01))]]
 
-train_set <- yxlo[-folds$Fold01] 
+#train_set <- yxlo[-folds$Fold01] 
 
 train_set <- yxlo
 
@@ -163,16 +166,32 @@ head(logisticmodel)
 
 ## Step 4: Evaluate Performance
 
-Think about some of the tools that you have for evaluating performance.  Choose one and articulate why you have chosen it.
+#Think about some of the tools that you have for evaluating performance.  Choose one and articulate why you have chosen it.
 
 ```{r "Step 4: Evaluate Performance" }
 
 # Run the model on the cv_set
-cv_set <- sample_n(yxlo, 25, replace = FALSE)
+cv_set <- sample_n(yxlo, 90000, replace = FALSE)
 predictedRes <- predict(logisticmodel, cv_set, type = "response")
 
 # Create a new table with "Actual OP"  "Predicted OP" for the cv_set
 predictTable <- data.frame(predict_type = predictedRes, actual_type = cv_set$delayed)
+# Apply ROC to get the threshold
+library(pROC)
+analysis <- roc(response=predictTable$actual_type, predictor=predictTable$predict_type)
+e <- cbind(analysis$thresholds,analysis$sensitivities+analysis$specificities)
+opt_t <- subset(e,e[,2]==max(e[,2]))[,1]
+
+#Plot ROC Curve
+plot(1-analysis$specificities,analysis$sensitivities,type="l",
+ylab="Sensitiviy",xlab="1-Specificity",col="black",lwd=2,
+main = "ROC Curve for Simulated Data")
+abline(a=0,b=1)
+abline(v = opt_t) #add optimal t to ROC curve
+opt_t #print t
+
+# O/p of above ROC intersection of sensitivity and specificity
+predict_cutoff <- 0.2639371
 
 # Create the confusion Matrix
 library(caret)
