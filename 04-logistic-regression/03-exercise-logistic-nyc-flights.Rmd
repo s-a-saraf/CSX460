@@ -156,7 +156,10 @@ library("caret")
 
 #train_set <- yxlo[-folds$Fold01] 
 
-train_set <- yxlo
+partition <- sample(1:nrow(yxlo), nrow(yxlo)*0.75, replace = FALSE)
+
+train_set <- yxlo[partition, ]
+cv_set <- yxlo[-partition, ]
 
 train_set %>% sapply(. %>% unique %>% length)
 #sampled_set <- sample_n(train_set, 15000, replace = FALSE)
@@ -171,7 +174,7 @@ head(logisticmodel)
 ```{r "Step 4: Evaluate Performance" }
 
 # Run the model on the cv_set
-cv_set <- sample_n(yxlo, 90000, replace = FALSE)
+#cv_set <- sample_n(yxlo, 90000, replace = FALSE)
 predictedRes <- predict(logisticmodel, cv_set, type = "response")
 
 # Create a new table with "Actual OP"  "Predicted OP" for the cv_set
@@ -191,28 +194,32 @@ abline(v = opt_t) #add optimal t to ROC curve
 opt_t #print t
 
 # O/p of above ROC intersection of sensitivity and specificity
-predict_cutoff <- 0.2639371
+predict_threshold <- 0.2639371
+
+# Create a new table with "Actual OP"  "Predicted OP" for the cv_set
+predictTable$predict_type[which(predictTable$predict_type < predict_threshold)] <- 0
+predictTable$predict_type[which(predictTable$predict_type >= predict_threshold)] <- 1
 
 # Create the confusion Matrix
 library(caret)
 confusionMat <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
 
 # Get the sensitivity < True Positive Ratio >
-sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
+#sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
 
 # Get the specificity < True Negative Ratio >
-speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
+#speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
 
 
 ```
 
- 
 ## Step 5: Improve Performance 
 
 Show some steps for improving model performance.
 
 ```{r "Step 5: Improve Performance" }
-
+# Based on specificity, sensitivity, precision and recall values, we can think of
+# using certain new combination values etc
 ```
 
 
@@ -256,7 +263,11 @@ for(i in 1:ncol(yxlo)){
 ```
 
 ```{r "Step B.3: Train The Model" }
-train_set <- yxlo
+
+partition <- sample(1:nrow(yxlo), nrow(yxlo)*0.75, replace = FALSE)
+
+train_set <- yxlo[partition, ]
+cv_set <- yxlo[-partition, ]
 
 train_set %>% sapply(. %>% unique %>% length)
 #sampled_set <- sample_n(train_set, 15000, replace = FALSE)
@@ -269,20 +280,41 @@ head(logisticmodel)
 ```{r "Step B.4: Evaluate Performance" }
 
 # Run the model on the cv_set
-cv_set <- sample_n(yxlo, 25, replace = FALSE)
+#cv_set <- sample_n(yxlo, 90000, replace = FALSE)
 predictedRes <- predict(logisticmodel, cv_set, type = "response")
 
 # Create a new table with "Actual OP"  "Predicted OP" for the cv_set
 predictTable <- data.frame(predict_type = predictedRes, actual_type = cv_set$delayed)
+# Apply ROC to get the threshold
+library(pROC)
+analysis <- roc(response=predictTable$actual_type, predictor=predictTable$predict_type)
+e <- cbind(analysis$thresholds,analysis$sensitivities+analysis$specificities)
+opt_t <- subset(e,e[,2]==max(e[,2]))[,1]
+
+#Plot ROC Curve
+plot(1-analysis$specificities,analysis$sensitivities,type="l",
+ylab="Sensitiviy",xlab="1-Specificity",col="black",lwd=2,
+main = "ROC Curve for Simulated Data")
+abline(a=0,b=1)
+abline(v = opt_t) #add optimal t to ROC curve
+opt_t #print t
+
+# O/p of above ROC intersection of sensitivity and specificity
+predict_threshold <- 0.2639371
+
+# Create a new table with "Actual OP"  "Predicted OP" for the cv_set
+predictTable$predict_type[which(predictTable$predict_type < predict_threshold)] <- 0
+predictTable$predict_type[which(predictTable$predict_type >= predict_threshold)] <- 1
 
 # Create the confusion Matrix
 library(caret)
 confusionMat <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
 
 # Get the sensitivity < True Positive Ratio >
-sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
+#sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
 
 # Get the specificity < True Negative Ratio >
-speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
+#speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
+
 
 ```
