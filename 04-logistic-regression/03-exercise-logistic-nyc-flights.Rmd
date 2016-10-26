@@ -274,7 +274,7 @@ cv_set <- yxlo[-partition, ]
 train_set %>% sapply(. %>% unique %>% length)
 #sampled_set <- sample_n(train_set, 15000, replace = FALSE)
 logisticmodel <- glm(delayed ~ ., data = train_set, family = "binomial")
-head(logisticmodel)
+#head(logisticmodel)
 
 ```
 
