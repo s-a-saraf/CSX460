@@ -164,7 +164,7 @@ cv_set <- yxlo[-partition, ]
 train_set %>% sapply(. %>% unique %>% length)
 #sampled_set <- sample_n(train_set, 15000, replace = FALSE)
 logisticmodel <- glm(delayed ~ ., data = train_set, family = "binomial")
-head(logisticmodel)
+#head(logisticmodel)
 ```
 
 ## Step 4: Evaluate Performance
@@ -244,7 +244,9 @@ xs <- c(
 
 yxlo <- YX[, c(y, xs)]
 yxlo$delayed <- ifelse(yxlo$arr_delay >= 15, 1, 0)
- 
+#Remove arr_delay
+yxlo <- yxlo[, !(names(yxlo) %in% c("arr_delay"))] 
+
 ggplot(data = yxlo, aes(delayed)) + geom_histogram()
 
 yxlo %>% sapply(. %>% is.na %>% sum)
