@@ -158,7 +158,7 @@ mpredict <- predict(m1, test)
 Show some steps for improving model performance.
 
 ```{r "Step 5: Improve Performance" }
-
+save.image("~/csx460/CSX460/02-fundamentals/data/ex2.RData")
 ```
 
 

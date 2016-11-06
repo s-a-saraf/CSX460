@@ -205,7 +205,7 @@ library(caret)
 confusionMat <- confusionMatrix(predictTable$predict_type, predictTable$actual_type, positive = "1")
 
 # Get the sensitivity < True Positive Ratio >
-#sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
+sensi <- sensitivity(predictTable$predict_type, predictTable$actual_type, positive=1)
 
 # Get the specificity < True Negative Ratio >
 #speci <- specificity(predictTable$predict_type, predictTable$actual_type, negative=0)
