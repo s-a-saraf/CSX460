@@ -15,8 +15,32 @@ The German Credit Data (data/german_credit);
 Show All Work! 
 
 ```{r}
+setwd("~/csx460/CSX460/05-classification-metrics-and-resampling")
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(magrittr)
+library(lubridate)
+df <- read_csv("../data/german_credit.csv")
+str(df)
 
+# Check for unique values < Columns which single value and hence can be ignored >
+df %>% sapply(. %>% unique %>% length)
 
+# Find the NA count for each feature
+df %>% sapply(. %>% is.na %>% sum)
+library(Amelia)
+missmap(df)
+
+#split the data into training and test sets.
+vari <- sample(1:nrow(df), 0.75 * nrow(df), replace = FALSE)
+df_train <- df[vari, ]
+df_test <- df[-vari, ]
+
+logisticModel <- glm(Creditability ~ ., data = df_train, family = "binomial")
+
+#Analyze the model
+summary(logisticModel)
 ```
 
 
@@ -38,6 +62,65 @@ calculate:
 * Precision
 
 ```{r, echo=FALSE}
+predData <- predict(logisticModel, df_test, type = "response")
 
+predictTable <- data.frame(predictType = predData, actualType = df_test$Creditability)
 
+# Apply ROC to get the threshold
+library(pROC)
+analysis <- roc(response=predictTable$actualType, predictor=predictTable$predictType)
+e <- cbind(analysis$thresholds,analysis$sensitivities+analysis$specificities)
+opt_t <- subset(e,e[,2]==max(e[,2]))[,1]
+
+#Plot ROC Curve
+plot(1-analysis$specificities,analysis$sensitivities,type="l",
+ylab="Sensitiviy",xlab="1-Specificity",col="black",lwd=2,
+main = "ROC Curve for Simulated Data")
+abline(a=0,b=1)
+abline(v = opt_t) #add optimal t to ROC curve
+opt_t #print t
+
+# O/P from above -
+threshold <- 0.6828225
+
+#Generate the confusion matrix.
+# < threshold = 0
+# >= threshold = 1
+
+predictTable$predictType[which(predictTable$predictType < threshold)] <- 0
+predictTable$predictType[which(predictTable$predictType >= threshold)] <- 1
+
+# Confusion Matrix generation
+library(caret)
+confusionMat <- confusionMatrix(predictTable$predictType, predictTable$actualType, positive = "1")
+confusionMat
+# Misclassification Rate
+# Prevalence 
+# Accuracy
+accuracy <- (TP + TN)/(TP + TN + FP + FN)
+
+# Error Rate / Misclassification Rate
+err_rate <- (FP + FN)/(TP + TN + FP + FN)
+err_rate <- 1 - accuracy
+
+# True Positive Rate  
+TPR <- TP/(TP+FN)
+# Sensitivity 
+Sensitivity <- TPR
+# Recall 
+recall <- TPR
+
+# False Positive Rate
+FPR = FP/(FP + TN)
+
+# True Negative Rate
+TNR <- TN/(FP+TN)
+# Specificity 
+Specificity <- TNR
+
+# False Negative Rate 
+FNR <- FN/(FN + TP)
+
+# Precision
+Precision <- TP/(TP + FP)
 ```
