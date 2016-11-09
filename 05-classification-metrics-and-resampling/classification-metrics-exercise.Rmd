@@ -81,8 +81,8 @@ abline(v = opt_t) #add optimal t to ROC curve
 opt_t #print t
 
 # O/P from above -
-threshold <- 0.6828225
-
+#threshold <- 0.7336027
+threshold <- 0.025
 #Generate the confusion matrix.
 # < threshold = 0
 # >= threshold = 1
@@ -92,8 +92,32 @@ predictTable$predictType[which(predictTable$predictType >= threshold)] <- 1
 
 # Confusion Matrix generation
 library(caret)
-confusionMat <- confusionMatrix(predictTable$predictType, predictTable$actualType, positive = "1")
+confusionMat <- confusionMatrix(predictTable$predictType, predictTable$actualType, positive = 1)
 confusionMat
+
+# TODO : How to extract the values from the confusion matrix ?
+TN <- 0
+FN <- 0
+TP <- 0
+FP <- 0
+
+# Workaround - Loop through all and calculate - TN, TP, FN, FP
+for (i in 1:nrow(predictTable)) {
+    if (predictTable$predictType %in% c(1)) {
+       if (predictTable$actualType %in% c(1)) {
+         TP <- TP + 1
+       } else {
+         FP <- FP + 1
+       }
+    } else {
+      if (predictTable$actualType %in% c(1)) {
+        FN <- FN + 1
+      } else {
+        TN <- TN + 1
+      }
+    }
+}
+
 # Misclassification Rate
 # Prevalence 
 # Accuracy
