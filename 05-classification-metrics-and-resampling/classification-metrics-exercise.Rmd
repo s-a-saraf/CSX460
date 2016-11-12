@@ -63,7 +63,7 @@ calculate:
 
 ```{r, echo=FALSE}
 predData <- predict(logisticModel, df_test, type = "response")
-
+hist(predData)
 predictTable <- data.frame(predictType = predData, actualType = df_test$Creditability)
 summary(predictTable)
 # Apply ROC to get the threshold
@@ -81,8 +81,8 @@ abline(v = opt_t) #add optimal t to ROC curve
 opt_t #print t
 
 # O/P from above -
-threshold <- 0.7336027
-#threshold <- 0.025
+#threshold <- 0.7616483
+threshold <- 0.025
 #Generate the confusion matrix.
 # < threshold = 0
 # >= threshold = 1
@@ -116,40 +116,43 @@ for (i in 1:nrow(predictTable)) {
         TN <- TN + 1
       }
     }
-  i
+}
+
   TN
   TP
   FN
   FP
-}
-
 # Misclassification Rate
 # Prevalence 
 # Accuracy
 accuracy <- (TP + TN)/(TP + TN + FP + FN)
-
+accuracy
 # Error Rate / Misclassification Rate
 err_rate <- (FP + FN)/(TP + TN + FP + FN)
 err_rate <- 1 - accuracy
-
+err_rate
 # True Positive Rate  
 TPR <- TP/(TP+FN)
+TPR
 # Sensitivity 
 Sensitivity <- TPR
+Sensitivity
 # Recall 
 recall <- TPR
-
+recall
 # False Positive Rate
 FPR = FP/(FP + TN)
-
+FPR
 # True Negative Rate
 TNR <- TN/(FP+TN)
+TNR
 # Specificity 
 Specificity <- TNR
-
+Specificity
 # False Negative Rate 
 FNR <- FN/(FN + TP)
-
+FNR
 # Precision
 Precision <- TP/(TP + FP)
+Precision
 ```
