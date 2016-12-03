@@ -14,8 +14,63 @@ beta (roll angle) for the hypothetical aircraft.
 
 Show all work:
 
-```r
+```{r load_libs}
+library(ggplot2)
+library(psych)
+library(readr)
+library(magrittr)
+library(lubridate)
+library(stringr)
+library(dplyr)
+library(data.table)
+```
 
+```r
+# Collect the data.
+setwd("~/csx460/CSX460/08-time-series-analysis/control-lift/")
+table <- readRDS("control-lift.rds")
+
+# Explore the data.
+summary(table)
+str(table)
+ggplot(data = table, aes(cl.stab)) + geom_histogram()
+
+# Find NA's
+table %>% sapply(. %>% is.na %>% sum)
+library("Amelia")
+missmap(table)
+
+# Find the correaltion between the variables
+pairs.panels(table[c( "cl.stab","alpha.deg", "beta.deg")])
+
+# Make a naive model
+fit.naive <- train(cl.stab ~ 1, table, method = "lm")
+
+# Run caret -> lm for linear regression. This is the simple linear model.
+library(caret)
+fit <- train(cl.stab ~ ., table, method = 'lm')
+fit
+fit %>% summary()
+
+# Get the formula used by caret lm
+formula(fit)
+
+table[ , qplot(table$alpha.deg, table$cl.stab) + geom_smooth()]
+
+# We see that alpha is more imp feature and hence must be weighed in more.
+# Change the model formula to use alpha ^ 3
+# Observation : RMSE decreased
+
+fit2 <- train(cl.stab ~ alpha.deg + I(alpha.deg ^ 2), table, method = 'lm')
+fit2
+fit2 %>% summary
+
+# Try alpha cube, ^4, ^5 .... ^9
+form.ho <- table$cl.stab ~ poly(alpha.deg, 9)
+fit.ho <- train(form.ho, table$cl.stab, method = "lm")
+yfit.ho$results #RMSE 
+
+fit.ho$finalModel %>% summary
 ```
 
 How good is your model?
