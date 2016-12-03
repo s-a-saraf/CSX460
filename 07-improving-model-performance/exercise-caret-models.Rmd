@@ -34,16 +34,104 @@ for arr_delay >= 15 minutes.
 
 Save the caret objects with the names provided.
 
+```{r load_libs}
+library(caret)
+library(ggplot2)
+library(psych)
+library(readr)
+library(magrittr)
+library(lubridate)
+library(stringr)
+library(dplyr)
+```
+
 ```{r}
 
 # Your work here.
 
-fit.glm <- ..
-fit.knn <- ..
-fit.rpart <- ..
-fit.rf <- ..
+# Read the data
+#df <- read_csv("~/csx460/CSX460/02-fundamentals/data/flights.csv") 
+load("~/csx460/CSX460/02-fundamentals/data/ex2.RData")
+setwd("~/csx460/CSX460/02-fundamentals/data/")
+
+# Study the table given and cherry pick the important features
+
+y <- "arr_delay"
+xs <- c(
+    'month','dep_delay','carrier','air_time','distance'
+   ,'year.y','type','engine'
+   ,'wind_dir','wind_speed','wind_gust','precip','pressure','visib'
+   ,'lat.x','lon.x','lat.y','lon.y'
+)
+
+df <-  YX[, c(y, xs)]
+df$delayed <- ifelse(df$arr_delay>=15, 1, 0)
+str(df)
+# Create a new df with {classification = 0 if arr_delay < 15 mins} and
+
+# Plot graph of o/p
+ggplot(data = df, aes(delayed)) + geom_histogram()
+df$arr_delay <- NULL
+
+
+#Get NA count
+df %>% sapply(. %>% is.na %>% sum)
+library("Amelia")
+missmap(df)
+
+# year.y, engine, type has lots of NA's.
+df$year.y <- NULL
+df$type <- NULL
+df$engine <- NULL
+
+# delayed itself has NA . Delete rows with NA's for delayed.
+df <- df[!is.na(df$delayed),]
+
+# Impute the NA's in each column. To avoid error while running train -
+# Error in na.fail.default(list(delayed = c(0, 1, 1, 0, 0, 0, 1, 0, 0, 0,  :
+# Refer https://www.analyticsvidhya.com/blog/2016/03/tutorial-powerful-packages-imputing-missing-values/
+# Not needed since na.pass in train for caret takes care of imputation.
+
+#library(mice)
+#mids <- mice(df, m= 1, maxit = 1, method = "pmm", seed = 52)
+#summary(mids)
+#midsbkup <- mids
+#mids$imp$dep_delay
+# Get the first iteration
+#df <- complete(mids, 1)
+
+set.seed(1244)
+
+#Create a train control to indicate that "k fold repeated cv" data prep is to be used
+# selectionFunction is used if the grid param is to be used which allows us to control
+# the value of the params to the "train". It means out of the various models built using
+# various values of the parameter, HOW do we choose one ? <eg: best one OR next to best one etc >
+
+# 10 fold cv with 3 repetitions
+trainctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, selectionFunction = "oneSE")
+
+
+# For classification, we need the outcome "delayed" to be a factor rather than a numeral. Else
+# train considers it as a regression
+df$delayed <- ifelse(df$delayed == 1, '1', '0')
+
+# na.action = na.pass imputes the NA's automatically for us. However, it does NOT work for trControl
+# when a fold-cv is used. Hence, use na.action = na.omit
+fit.glm <- train(delayed ~ ., 
+                 data = df, 
+                 method = "glm",
+                 na.action = na.omit, 
+                 trControl = trainctrl, 
+                 metric = "Kappa",
+                 family = "binomial")
+
+fit.knn <- train(delayed ~ ., data = df, method = "knn", na.action = na.pass)
+fit.rpart <- train(delayed ~ ., data = df, method = "rpart", na.action = na.pass)
+fit.rf <- train(delayed ~ ., data = df, method = "rf", na.action = na.pass)
 fit.myown1 <- ..
 fit.myown1 <- ..
+
+fit.glm
 ```
 
 Compare the  models?

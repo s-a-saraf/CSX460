@@ -55,6 +55,7 @@ fit %>% summary()
 # Get the formula used by caret lm
 formula(fit)
 
+# Plot a graph of cl.stab vs alpha.deg
 table[ , qplot(table$alpha.deg, table$cl.stab) + geom_smooth()]
 
 # We see that alpha is more imp feature and hence must be weighed in more.
