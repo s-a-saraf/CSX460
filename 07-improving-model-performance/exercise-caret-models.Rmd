@@ -100,6 +100,10 @@ df <- df[!is.na(df$delayed),]
 # Get the first iteration
 #df <- complete(mids, 1)
 
+# Use a smaller subset of the data since it takes a lot of time for this data.
+partition <- sample(1:nrow(df), nrow(df)*0.05, replace = FALSE)
+df <- df[partition, ]
+
 set.seed(1244)
 
 #Create a train control to indicate that "k fold repeated cv" data prep is to be used
@@ -122,20 +126,38 @@ fit.glm <- train(delayed ~ .,
                  method = "glm",
                  na.action = na.omit, 
                  trControl = trainctrl, 
-                 metric = "Kappa",
-                 family = "binomial")
+                 metric = "Kappa")
 
-fit.knn <- train(delayed ~ ., data = df, method = "knn", na.action = na.pass)
-fit.rpart <- train(delayed ~ ., data = df, method = "rpart", na.action = na.pass)
-fit.rf <- train(delayed ~ ., data = df, method = "rf", na.action = na.pass)
+fit.knn <- train(delayed ~ ., 
+                 data = df, 
+                 method = "knn", 
+                 na.action = na.omit,
+                 metric = "Kappa",
+                 trControl = trainctrl)
+fit.rpart <- train(delayed ~ ., 
+                   data = df, 
+                   method = "rpart",
+                   na.action = na.omit,
+                   metric = "Kappa",
+                   trControl = trainctrl)
+
+fit.rf <- train(delayed ~ ., 
+                data = df, 
+                method = "rf", 
+                na.action = na.omit,
+                metric = "Kappa",
+                trControl = trainctrl)
 fit.myown1 <- ..
 fit.myown1 <- ..
 
 fit.glm
+fit.knn
+fit.rpart
+fit.rf
 ```
 
 Compare the  models?
-
+The logistic regression model has the highest Kappa.
 Which is best?  Why?
 
 ```
